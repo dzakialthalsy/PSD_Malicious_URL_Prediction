@@ -1,0 +1,31 @@
+# Normalisasi line ending otomatis (LF di repo, native saat checkout)
+* text=auto
+
+# Skrip shell & Gradle wrapper harus LF
+*.sh        text eol=lf
+gradlew     text eol=lf
+
+# Skrip Windows harus CRLF
+*.bat       text eol=crlf
+*.cmd       text eol=crlf
+
+# File biner — jangan di-diff / di-normalisasi
+*.joblib    binary
+*.pkl       binary
+*.h5        binary
+*.onnx      binary
+*.apk       binary
+*.aab       binary
+*.keystore  binary
+*.jar       binary
+*.png       binary
+*.jpg       binary
+*.jpeg      binary
+*.gif       binary
+*.ico       binary
+*.woff      binary
+*.woff2     binary
+*.ttf       binary
+
+# Notebook diperlakukan sebagai teks
+*.ipynb     text

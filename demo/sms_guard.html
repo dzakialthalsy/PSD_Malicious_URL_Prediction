@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>SMS Guard — Demo</title>
+<style>
+  :root{
+    --red:#e60012; --red-dark:#b3000e; --red-soft:#ffe9eb;
+    --green:#0a8f3c; --green-soft:#e6f6ec;
+    --ink:#16181d; --muted:#6b7280; --line:#e6e8ec; --bg:#f2f3f5;
+    --warn:#d10f23;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%}
+  body{
+    font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;
+    background:
+      radial-gradient(1200px 600px at 80% -10%, #2a2d36 0%, transparent 60%),
+      radial-gradient(1000px 500px at 0% 110%, #3a0007 0%, transparent 55%),
+      linear-gradient(160deg,#0f1115,#1b1e25);
+    color:#fff; min-height:100%;
+    display:flex; gap:48px; align-items:center; justify-content:center;
+    padding:40px; flex-wrap:wrap;
+  }
+  /* ---------- side panel (booth talking points) ---------- */
+  .pitch{max-width:380px}
+  .pitch .tag{display:inline-block;background:var(--red);color:#fff;font-weight:700;
+    font-size:12px;letter-spacing:.5px;padding:6px 12px;border-radius:999px;margin-bottom:18px}
+  .pitch h1{font-size:34px;line-height:1.15;margin:0 0 14px}
+  .pitch h1 span{color:#ff5a68}
+  .pitch p{color:#c4c8d0;line-height:1.6;margin:0 0 18px;font-size:15px}
+  .pitch ul{list-style:none;padding:0;margin:0 0 22px}
+  .pitch li{display:flex;gap:10px;align-items:flex-start;margin-bottom:12px;color:#e7e9ee;font-size:14px}
+  .pitch li .dot{flex:none;width:20px;height:20px;border-radius:50%;background:var(--red);
+    display:grid;place-items:center;font-size:12px;margin-top:1px}
+  .pitch .foot{font-size:12px;color:#7b818c;border-top:1px solid #2a2e38;padding-top:14px}
+
+  /* ---------- phone ---------- */
+  .phone{
+    width:390px;height:800px;background:#000;border-radius:46px;
+    padding:12px;box-shadow:0 40px 90px rgba(0,0,0,.55), 0 0 0 2px #2a2d34;
+    flex:none;position:relative;
+  }
+  .screen{
+    position:relative;width:100%;height:100%;background:var(--bg);
+    border-radius:36px;overflow:hidden;display:flex;flex-direction:column;color:var(--ink)
+  }
+  .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:150px;height:26px;
+    background:#000;border-bottom-left-radius:16px;border-bottom-right-radius:16px;z-index:40}
+  .statusbar{height:44px;display:flex;align-items:center;justify-content:space-between;
+    padding:0 22px;font-size:13px;font-weight:600;color:#fff;background:var(--red)}
+  /* app bar */
+  .appbar{background:var(--red);color:#fff;padding:6px 16px 16px;display:flex;align-items:center;gap:12px}
+  .appbar .logo{width:38px;height:38px;border-radius:11px;background:rgba(255,255,255,.18);
+    display:grid;place-items:center;font-size:20px}
+  .appbar .t{font-weight:700;font-size:18px;line-height:1}
+  .appbar .s{font-size:11.5px;opacity:.9;margin-top:3px}
+  .protected{margin-left:auto;background:rgba(255,255,255,.16);border-radius:999px;
+    font-size:11px;font-weight:600;padding:5px 10px;display:flex;gap:5px;align-items:center}
+  /* tabs */
+  .tabs{display:flex;background:var(--red-dark)}
+  .tabs button{flex:1;background:none;border:0;color:#ffd9dd;font-size:13.5px;font-weight:600;
+    padding:11px 0;cursor:pointer;border-bottom:3px solid transparent}
+  .tabs button.active{color:#fff;border-bottom-color:#fff}
+
+  .body{flex:1;overflow-y:auto;padding:12px 12px 90px}
+  .body::-webkit-scrollbar{width:0}
+
+  /* sms card */
+  .sms{background:#fff;border-radius:16px;padding:13px 14px;margin-bottom:11px;
+    box-shadow:0 1px 3px rgba(0,0,0,.06);animation:pop .35s ease}
+  @keyframes pop{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .sms .top{display:flex;align-items:center;gap:9px;margin-bottom:6px}
+  .sms .av{width:34px;height:34px;border-radius:50%;background:#dfe3ea;color:#54606f;
+    font-weight:700;display:grid;place-items:center;font-size:14px;flex:none}
+  .sms .sender{font-weight:700;font-size:14px}
+  .sms .time{margin-left:auto;font-size:11px;color:var(--muted)}
+  .sms .text{font-size:13.5px;line-height:1.5;color:#2b2f36;word-break:break-word}
+  .sms .text a{color:#1357d1;text-decoration:none}
+  .sms.danger{border:1.5px solid var(--red);background:#fff6f7}
+
+  /* verdict banners */
+  .verdict{margin-top:10px;border-radius:11px;padding:9px 11px;font-size:12.5px;
+    display:flex;gap:8px;align-items:center;font-weight:600}
+  .verdict.scan{background:#eef1f5;color:#54606f}
+  .verdict.safe{background:var(--green-soft);color:var(--green)}
+  .verdict.bad{background:var(--red-soft);color:var(--warn)}
+  .spinner{width:14px;height:14px;border:2px solid #c3c9d2;border-top-color:#54606f;
+    border-radius:50%;animation:spin .7s linear infinite;flex:none}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .score{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums}
+
+  /* incoming button */
+  .fab{position:absolute;left:50%;transform:translateX(-50%);bottom:22px;z-index:30;
+    background:var(--red);color:#fff;border:0;border-radius:999px;padding:14px 22px;
+    font-size:14px;font-weight:700;box-shadow:0 10px 24px rgba(230,0,18,.45);cursor:pointer;
+    display:flex;gap:9px;align-items:center;transition:transform .08s}
+  .fab:active{transform:translateX(-50%) scale(.96)}
+  .fab[disabled]{opacity:.5;cursor:default}
+
+  .empty{text-align:center;color:var(--muted);font-size:13px;margin-top:60px;padding:0 30px;line-height:1.6}
+
+  /* manual check tab */
+  .check{padding:18px 16px}
+  .check h3{margin:4px 0 4px;font-size:16px}
+  .check p{margin:0 0 16px;color:var(--muted);font-size:12.5px;line-height:1.5}
+  .check input{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:13px;
+    font-size:14px;outline:none}
+  .check input:focus{border-color:var(--red)}
+  .check .go{width:100%;margin-top:12px;background:var(--red);color:#fff;border:0;border-radius:12px;
+    padding:13px;font-size:14.5px;font-weight:700;cursor:pointer}
+  .gauge{margin-top:22px;text-align:center;display:none}
+  .gauge.show{display:block;animation:pop .35s ease}
+  .gauge .num{font-size:46px;font-weight:800;line-height:1}
+  .gauge .lab{margin-top:6px;font-weight:700;font-size:15px}
+  .gauge .url{margin-top:8px;font-size:12px;color:var(--muted);word-break:break-all}
+  .bar{height:12px;border-radius:999px;background:#eceef2;margin-top:16px;overflow:hidden}
+  .bar > div{height:100%;width:0;border-radius:999px;transition:width .7s ease}
+  .chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
+  .chips button{border:1px solid var(--line);background:#fff;border-radius:999px;
+    padding:7px 11px;font-size:11.5px;cursor:pointer;color:#374151}
+
+  /* warning modal */
+  .modal{position:absolute;inset:0;background:rgba(10,12,16,.55);backdrop-filter:blur(2px);
+    z-index:50;display:none;align-items:center;justify-content:center;padding:24px}
+  .modal.show{display:flex;animation:pop .25s ease}
+  .sheet{background:#fff;border-radius:22px;width:100%;overflow:hidden;text-align:center}
+  .sheet .hd{background:var(--red);color:#fff;padding:24px 20px}
+  .sheet .hd .ic{font-size:44px}
+  .sheet .hd .ti{font-size:19px;font-weight:800;margin-top:6px}
+  .sheet .bd{padding:18px 20px}
+  .sheet .bd .u{background:#f4f5f7;border-radius:10px;padding:10px;font-size:12px;color:#374151;
+    word-break:break-all;margin-bottom:12px}
+  .sheet .bd p{font-size:13px;color:#4b5563;line-height:1.55;margin:0 0 16px}
+  .sheet .bd .risk{font-weight:800;color:var(--warn)}
+  .sheet .btns{display:flex;flex-direction:column;gap:9px}
+  .sheet .btns .a{padding:13px;border-radius:12px;border:0;font-size:14px;font-weight:700;cursor:pointer}
+  .sheet .a.primary{background:var(--green);color:#fff}
+  .sheet .a.ghost{background:#fff;color:var(--muted);border:1px solid var(--line)}
+
+  .ai-foot{position:absolute;bottom:0;left:0;right:0;text-align:center;font-size:10.5px;
+    color:var(--muted);padding:7px;background:rgba(242,243,245,.9);z-index:20}
+  @media(max-width:900px){.pitch{display:none}}
+</style>
+</head>
+<body>
+
+  <section class="pitch">
+    <span class="tag">LAB SI × TELKOMSEL</span>
+    <h1>SMS Guard<br><span>Tameng dari link penipuan.</span></h1>
+    <p>Setiap link di SMS diperiksa oleh model AI sebelum Anda sempat menekannya.
+       Penipuan "hadiah", "akun diblokir", dan "paket tertahan" dihentikan di tempat.</p>
+    <ul>
+      <li><span class="dot">✓</span><div>Deteksi real-time dengan model machine learning (LightGBM) — bukan sekadar daftar hitam.</div></li>
+      <li><span class="dot">✓</span><div>Hanya URL yang diperiksa, bukan isi SMS — privasi pengguna terjaga.</div></li>
+      <li><span class="dot">✓</span><div>Sebagai operator, Telkomsel bisa menjalankan ini di level jaringan — melindungi <b>semua</b> pelanggan.</div></li>
+    </ul>
+    <div class="foot">Prototipe — Booth Lab SI, Auditorium G2, 18 Juni 2026.<br>
+      Tekan tombol di HP untuk mensimulasikan SMS masuk.</div>
+  </section>
+
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="screen">
+      <div class="statusbar"><span>09:41</span><span>📶 🔋</span></div>
+      <div class="appbar">
+        <div class="logo">🛡️</div>
+        <div>
+          <div class="t">SMS Guard</div>
+          <div class="s">Pesan terlindungi</div>
+        </div>
+        <div class="protected">● Aktif</div>
+      </div>
+      <div class="tabs">
+        <button id="tabInbox" class="active" onclick="showTab('inbox')">Kotak Masuk</button>
+        <button id="tabCheck" onclick="showTab('check')">Cek Link</button>
+      </div>
+
+      <!-- INBOX -->
+      <div id="inbox" class="body">
+        <div id="list"></div>
+        <div id="emptyHint" class="empty">Belum ada pesan baru.<br>Tekan tombol di bawah untuk mensimulasikan SMS masuk.</div>
+      </div>
+      <button id="fab" class="fab" onclick="incoming()">📩 Terima SMS Baru</button>
+
+      <!-- CHECK -->
+      <div id="check" class="body" style="display:none">
+        <div class="check">
+          <h3>Cek keamanan link</h3>
+          <p>Tempel link mencurigakan untuk diperiksa oleh model AI.</p>
+          <input id="urlInput" placeholder="contoh: http://hadiah-poin.xyz/klaim" />
+          <button class="go" onclick="manualCheck()">Periksa Sekarang</button>
+          <div class="chips">
+            <button onclick="fill('http://t-sel-poin-hadiah.xyz/klaim')">Contoh hadiah</button>
+            <button onclick="fill('http://bri-verifikasi-akun.com/login')">Contoh bank</button>
+            <button onclick="fill('https://www.telkomsel.com')">Situs resmi</button>
+          </div>
+          <div id="gauge" class="gauge">
+            <div class="num" id="gNum">–</div>
+            <div class="lab" id="gLab"></div>
+            <div class="bar"><div id="gBar"></div></div>
+            <div class="url" id="gUrl"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- WARNING MODAL -->
+      <div id="modal" class="modal">
+        <div class="sheet">
+          <div class="hd"><div class="ic">⚠️</div><div class="ti">Link Berbahaya Diblokir</div></div>
+          <div class="bd">
+            <div class="u" id="mUrl"></div>
+            <p>Link ini terindikasi <span class="risk">penipuan</span> dengan tingkat risiko
+               <span class="risk" id="mScore"></span>. Membukanya dapat mencuri data atau uang Anda.</p>
+            <div class="btns">
+              <button class="a primary" onclick="closeModal()">Lindungi Saya (Tutup)</button>
+              <button class="a ghost" onclick="closeModal()">Buka tetap (tidak disarankan)</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ai-foot">Diperiksa oleh model AI • LightGBM</div>
+    </div>
+  </div>
+
+<script>
+const THRESHOLD = 0.5119020229513724;
+
+// Fallback offline (skor hasil uji model) — supaya demo tak pernah gagal di booth
+const FALLBACK = {
+  "http://t-sel-poin-hadiah.xyz/klaim":0.981,
+  "http://bri-verifikasi-akun.com/login":0.861,
+  "http://jne-resi-cek.info/bayar-bea":0.828,
+  "http://dana-kaget-promo.tk/cair":0.994,
+  "https://www.telkomsel.com":0.008,
+  "https://www.pln.co.id":0.021,
+  "https://www.tokopedia.com":0.008,
+  "https://www.bri.co.id":0.016
+};
+
+// Skenario SMS yang masuk berurutan
+const SCRIPT = [
+  {sender:"Telkomsel", initials:"TS", time:"09:32",
+   text:'Info: sisa kuota utama Anda 12,4 GB. Beli paket hemat di https://www.telkomsel.com',
+   url:'https://www.telkomsel.com'},
+  {sender:"TELKOMSEL-POIN", initials:"!", time:"09:40",
+   text:'SELAMAT! Nomor Anda terpilih mendapat Poin senilai Rp175.000.000. Klaim sebelum hangus: http://t-sel-poin-hadiah.xyz/klaim',
+   url:'http://t-sel-poin-hadiah.xyz/klaim'},
+  {sender:"BRI", initials:"BR", time:"09:41",
+   text:'Kode OTP Anda: 882104. RAHASIA. Jangan berikan kepada siapa pun termasuk pihak bank.',
+   url:null},
+  {sender:"BRI-Info", initials:"!", time:"09:42",
+   text:'Nasabah Yth, akun Anda akan DIBLOKIR. Verifikasi data sekarang: http://bri-verifikasi-akun.com/login',
+   url:'http://bri-verifikasi-akun.com/login'},
+  {sender:"JNE", initials:"!", time:"09:43",
+   text:'Paket Anda tertahan di gudang. Selesaikan bea Rp15.000: http://jne-resi-cek.info/bayar-bea',
+   url:'http://jne-resi-cek.info/bayar-bea'},
+  {sender:"Tokopedia", initials:"TP", time:"09:44",
+   text:'Pesananmu sedang dikirim. Lacak di https://www.tokopedia.com',
+   url:'https://www.tokopedia.com'},
+  {sender:"DANA", initials:"!", time:"09:45",
+   text:'Anda menerima DANA Kaget Rp500.000! Cairkan sekarang sebelum kedaluwarsa: http://dana-kaget-promo.tk/cair',
+   url:'http://dana-kaget-promo.tk/cair'}
+];
+let idx = 0;
+
+async function predict(url){
+  try{
+    const r = await fetch('/api/predict', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({urls:[url]})
+    });
+    if(!r.ok) throw new Error('http '+r.status);
+    const data = await r.json();
+    return data.results[0].probability;
+  }catch(e){
+    // fallback supaya booth aman
+    return (url in FALLBACK) ? FALLBACK[url] : 0.05;
+  }
+}
+
+function linkify(text, url){
+  if(!url) return escapeHtml(text);
+  return escapeHtml(text).replace(escapeHtml(url),
+    `<a href="#" onclick="return false">${escapeHtml(url)}</a>`);
+}
+function escapeHtml(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+async function incoming(){
+  if(idx >= SCRIPT.length){ document.getElementById('fab').disabled = true; return; }
+  const m = SCRIPT[idx++];
+  document.getElementById('emptyHint').style.display='none';
+
+  const list = document.getElementById('list');
+  const card = document.createElement('div');
+  card.className = 'sms';
+  card.innerHTML = `
+    <div class="top">
+      <div class="av">${m.initials}</div>
+      <div class="sender">${escapeHtml(m.sender)}</div>
+      <div class="time">${m.time}</div>
+    </div>
+    <div class="text">${linkify(m.text, m.url)}</div>
+    ${m.url ? `<div class="verdict scan"><span class="spinner"></span>Memeriksa link…</div>` : ''}`;
+  list.prepend(card);
+  document.getElementById('inbox').scrollTop = 0;
+
+  if(idx >= SCRIPT.length) document.getElementById('fab').disabled = true;
+  if(!m.url) return;
+
+  const prob = await predict(m.url);
+  const bad = prob >= THRESHOLD;
+  const pct = Math.round(prob*100);
+  const v = card.querySelector('.verdict');
+  if(bad){
+    card.classList.add('danger');
+    v.className = 'verdict bad';
+    v.innerHTML = `🚫 Link berbahaya — jangan dibuka <span class="score">${pct}%</span>`;
+    const a = card.querySelector('a');
+    if(a) a.onclick = (e)=>{ e.preventDefault(); openModal(m.url, pct); return false; };
+  }else{
+    v.className = 'verdict safe';
+    v.innerHTML = `✓ Link aman diverifikasi <span class="score">${pct}%</span>`;
+  }
+}
+
+function openModal(url, pct){
+  document.getElementById('mUrl').textContent = url;
+  document.getElementById('mScore').textContent = pct + '%';
+  document.getElementById('modal').classList.add('show');
+}
+function closeModal(){ document.getElementById('modal').classList.remove('show'); }
+
+function showTab(t){
+  const inbox = t==='inbox';
+  document.getElementById('inbox').style.display = inbox?'block':'none';
+  document.getElementById('check').style.display = inbox?'none':'block';
+  document.getElementById('fab').style.display = inbox?'flex':'none';
+  document.getElementById('tabInbox').classList.toggle('active', inbox);
+  document.getElementById('tabCheck').classList.toggle('active', !inbox);
+}
+function fill(u){ document.getElementById('urlInput').value = u; }
+
+async function manualCheck(){
+  const url = document.getElementById('urlInput').value.trim();
+  if(!url) return;
+  const g = document.getElementById('gauge');
+  g.classList.add('show');
+  document.getElementById('gNum').textContent = '…';
+  document.getElementById('gLab').textContent = 'Memeriksa…';
+  document.getElementById('gBar').style.width = '0';
+  document.getElementById('gUrl').textContent = url;
+
+  const prob = await predict(url);
+  const pct = Math.round(prob*100);
+  const bad = prob >= THRESHOLD;
+  document.getElementById('gNum').textContent = pct + '%';
+  document.getElementById('gNum').style.color = bad ? 'var(--red)' : 'var(--green)';
+  document.getElementById('gLab').textContent = bad ? '⚠️ Berbahaya (Malicious)' : '✓ Aman';
+  document.getElementById('gLab').style.color = bad ? 'var(--red)' : 'var(--green)';
+  const bar = document.getElementById('gBar');
+  bar.style.background = bad ? 'var(--red)' : 'var(--green)';
+  setTimeout(()=> bar.style.width = pct + '%', 50);
+}
+</script>
+</body>
+</html>

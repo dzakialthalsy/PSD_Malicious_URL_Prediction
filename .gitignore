@@ -1,0 +1,88 @@
+# ============================================================
+#  Python / Machine Learning
+# ============================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+.env
+*.env
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Testing / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# ============================================================
+#  Dataset besar — JANGAN commit ke Git (>100MB ditolak GitHub).
+#  Simpan via rilis / Google Drive / Git LFS bila perlu.
+# ============================================================
+*.csv
+*.parquet
+*.tsv
+dataset*/
+
+# ============================================================
+#  Runtime / logs
+# ============================================================
+*.log
+logs/
+
+# ============================================================
+#  Build outputs / binari besar
+# ============================================================
+*.apk
+*.aab
+frontend/dist/
+
+# Temp build workaround (lihat dokumentasi build mobile)
+/agtmp/
+
+# ============================================================
+#  React Native / Android (jika app mobile disertakan)
+# ============================================================
+**/node_modules/
+**/.gradle/
+**/android/build/
+**/android/app/build/
+**/android/.cxx/
+**/android/local.properties
+**/ios/Pods/
+**/ios/build/
+*.keystore
+!**/debug.keystore
+.metro-health-check*
+*.jsbundle
+
+# ============================================================
+#  OS
+# ============================================================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ============================================================
+#  Editor / IDE
+# ============================================================
+.vscode/
+.idea/
+*.iml
+*.swp
+*.swo
+*~
